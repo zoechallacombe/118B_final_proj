@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[5]:
+# In[1]:
 
 
 get_ipython().system('pip install neurodsp')
 
 
-# In[166]:
+# In[128]:
 
 
 import numpy as np
@@ -23,15 +23,15 @@ import pywt
 import numpy as np
 
 
-# In[167]:
+# In[3]:
 
 
 eeg_fs = 250 ##250 Hz
 
 
-# # FUNCTIONS
+# ## functions provided to us by starternotebook
 
-# In[8]:
+# In[4]:
 
 
 ## Create DF for each of these, columns are channels, each row is a trial run
@@ -55,7 +55,7 @@ def getDF(epochs, labels, times, chans):
     return pd.DataFrame(data_dict)
 
 
-# In[9]:
+# In[5]:
 
 
 # Extract data from raw dataframes for constructing trial-by-trial dataframe
@@ -80,7 +80,7 @@ def getEpochedDF(eeg_df, event_df, trial_duration_ms=4000):
     return eeg_epoch_df
 
 
-# In[10]:
+# In[6]:
 
 
 # PSD plotting
@@ -124,7 +124,7 @@ def plotPSD_fromEEG(eeg_data, fs=eeg_fs, pre_cut_off_freq=0, post_cut_off_freq=1
     plotPSD(freq, psd, fs, pre_cut_off_freq, post_cut_off_freq, label)
 
 
-# In[11]:
+# In[7]:
 
 
 # Spectrogram plotting
@@ -140,7 +140,7 @@ def plotSpectrogram_fromEEG(eeg_data, fs=eeg_fs, pre_cut_off_freq=0, post_cut_of
 
 # # Data Exploration - Begin actual analysis
 
-# In[12]:
+# In[8]:
 
 
 #GET EPOCHED DATA
@@ -150,13 +150,13 @@ epoch_train = pd.read_pickle('epoched_train.pkl')
 epoch_test = pd.read_pickle('epoched_test.pkl')
 
 
-# In[401]:
+# In[9]:
 
 
 epoch_unfiltered = epoch_train.loc[:,['event_type','C3','Cz','C4']]
 
 
-# In[13]:
+# In[10]:
 
 
 # Get PSD averages for each channel for each event type (0=left or 1=right)
@@ -184,7 +184,7 @@ for event_type in event_types.keys():
     psd_averages_by_type[event_type] = dict(avg_psds_one_type)
 
 
-# In[652]:
+# In[11]:
 
 
 #Looking at these, channel Cz experiences a peak in PSD between 5 and 8ish frequencies for left handed events
@@ -202,7 +202,7 @@ for event_type in event_types.keys():
     plt.show()
 
 
-# In[415]:
+# In[20]:
 
 
 #signal length per channel per trial, dimensions of all training trials, dimensions of all testing trials (does not contain classification)
@@ -210,9 +210,9 @@ epoch_train.iloc[0]['C3'].shape, epoch_train.shape, epoch_test.shape
 epoch_train.shape
 
 
-# ## Begin data filtering - Bandpass
+# ## Begin data filtering - Bandpass...this turned out to be unnecessary 
 
-# In[34]:
+# In[21]:
 
 
 ''' Key: 
@@ -256,7 +256,7 @@ EBTst = copy_EBTst.copy(deep = True)
 EBTr
 
 
-# In[17]:
+# In[22]:
 
 
 ## visualize the effect of highpass/lowpass/bandpass filtering on a single trial for a single channel
@@ -282,7 +282,7 @@ ax4.legend(loc = 'upper right')
 
 # ## Begin Applying Power Transformations on Epoched Signals
 
-# In[18]:
+# In[23]:
 
 
 epoch_channelsTr = pd.concat([EBTr.loc[:,['C3','Cz','C4']],EBTr.loc[:,'event_type']], axis = 1) ##using banded training df
@@ -291,7 +291,9 @@ epoch_channelsTr.shape, epoch_channelsTst.shape
 epoch_channelsTr.shape[0]
 
 
-# In[422]:
+# ## custom functions used to extract magnitude from epoched data, and signal differences
+
+# In[24]:
 
 
 ## magnitude/difference functions
@@ -331,7 +333,7 @@ train_unfiltered_mag = get_magnitude(epoch_unfiltered,['C3','Cz','C4']) ######
 train_unfiltered_sigdiff = signal_difference(epoch_unfiltered)          #####
 
 
-# In[21]:
+# In[25]:
 
 
 #see if data is normal or log transformed data is normal for C4
@@ -351,7 +353,7 @@ ax[1][1].hist(np.log(np.array(train_signalDiff.iloc[:,3], dtype=int)), alpha = 0
 #we'll run a goodness of fit test on the PSDs perhaps
 
 
-# In[426]:
+# In[26]:
 
 
 #Log the magnitudes and signal_diff magnitudes
@@ -377,7 +379,7 @@ train_unfiltered_mag = get_magnitude(epoch_unfiltered,['C3','Cz','C4']) ######
 train_unfiltered_sigdiff = signal_difference(epoch_unfiltered)   
 
 
-# In[427]:
+# In[27]:
 
 
 '''Magnitude Data we can use - Cleaned and ready to go'''
@@ -394,7 +396,7 @@ train_logMag;
 train_diff_logmag;
 
 
-# In[36]:
+# In[28]:
 
 
 #Using this functions
@@ -411,7 +413,7 @@ epoch_channelsTst.head()
 epoch_channelsTr.head()
 
 
-# In[25]:
+# In[29]:
 
 
 #total averages
@@ -420,10 +422,13 @@ psdavg_0 = psd_averages_by_type.get(0)  #dict
 psdavg_1 = psd_averages_by_type.get(1) #dict
 
 
-# In[406]:
+# ## custom functions to extract magnitude of PSDS and create 1hz log-magged PSDs, also to apply DWT and CWT 
+# -note this code was reformatted so as to NOT take the logarithm on the PSDS before taking their magnitude, we discussed this in our discussion/conclusion
+
+# In[ ]:
 
 
-#seperate epoch_channelsTr
+
 
 epoch_channelsTr0 = epoch_channelsTr[epoch_channelsTr.event_type == 0]
 epoch_channelsTr1 = epoch_channelsTr[epoch_channelsTr.event_type ==1]
@@ -435,28 +440,28 @@ log_trial_psd = np.log(mean_psd_trial[1])
 lower_bound = min(trial_frequencies).astype(int)
 upper_bound = max(trial_frequencies).astype(int)
 
-##create a function for extracting the power (magnitude) of the mean psds for a single trial/channel by interval
-##returns an array of three magnitudes
+#create a function for extracting the power (magnitude) of the mean psds for a single trial/channel by interval
+#returns an array of three magnitudes
 
-##can reformat this so that we split intervals into 2hz intervals
+#can reformat this so that we split intervals into 2hz intervals
 ## now that this is iterating a bunch of times, its super slow woops
 def extract_psd_mag(channel_array): 
     freq_and_psds = getMeanFreqPSD(channel_array)
     freq = freq_and_psds[0]
-    log_psds = np.log(freq_and_psds[1])
+    psds = freq_and_psds[1]
     
     inter_arr = []
     ##so this should approximate whats going on in the previous code, but i dont trust it 100%
     for i in range(lower_bound, upper_bound):
         on = np.where(np.logical_or(freq == i, freq == i+0.5)) #(0, 0.5)
         on_slice = np.arange(on[0][0], on[0][1]+1)
-        inter_arr.append(np.linalg.norm(log_psds[on_slice]))
+        inter_arr.append(np.linalg.norm(psds[on_slice]))
         i+=1
     return np.array(inter_arr)
 def extract_psd_logmag(channel_array): 
     freq_and_psds = getMeanFreqPSD(channel_array)
     freq = freq_and_psds[0]
-    log_psds = np.log(freq_and_psds[1])
+    psds = freq_and_psds[1]
     
     inter_arr = []
     ##so this should approximate whats going on in the previous code, but i dont trust it 100%
@@ -726,10 +731,40 @@ PSD_df_0 = PSD_df[PSD_df.loc[:,'event_type'] == 0]
 PSD_df_1 = PSD_df[PSD_df.loc[:,'event_type'] == 1]
 
 
-# In[438]:
+# In[117]:
 
 
-PSD_log_unf = pd.concat([create_interval_logpsds(epoch_unfiltered.loc[:,['C3','Cz','C4']]), epoch_unfiltered.loc[:,'event_type']], axis = 1)
+PSD_mag_unf = pd.concat([create_interval_psds(epoch_unfiltered.loc[:,['C3','Cz','C4']]), epoch_unfiltered.loc[:,'event_type']], axis = 1)
+
+
+# In[54]:
+
+
+x,y = getMeanFreqPSD(epoch_unfiltered.iloc[0].loc['C3'])
+
+
+# In[109]:
+
+
+freq_and_psds = getMeanFreqPSD(epoch_unfiltered.iloc[0].loc['C3'])
+
+
+# **below is where I realized we went wrong with double-logging the PSDS**
+
+# In[132]:
+
+
+onehzvec = extract_psd_logmag(epoch_unfiltered.iloc[0].loc['C3'])
+fig, ax = plt.subplots()
+ax.plot(x,y, alpha = 0.5,label = 'MPSD C3 Trial 1 over 125 hz')
+ax.scatter(np.arange(125), onehzvec, s = .8, color = 'red')
+ax.legend()
+
+
+# In[43]:
+
+
+len(x)
 
 
 # In[439]:
@@ -737,6 +772,24 @@ PSD_log_unf = pd.concat([create_interval_logpsds(epoch_unfiltered.loc[:,['C3','C
 
 PSD_unf0 = PSD_log_unf[PSD_log_unf.loc[:,'event_type']==0]
 PSD_unf1 = PSD_log_unf[PSD_log_unf.loc[:,'event_type']==1]
+
+
+# In[122]:
+
+
+PSD_mag_unf0 = PSD_mag_unf[PSD_mag_unf.loc[:,'event_type']==0]
+PSD_mag_unf1 = PSD_mag_unf[PSD_mag_unf.loc[:,'event_type']==1]
+tp_mag = {}
+for i in list(PSD_mag_unf1.columns[0:326]):
+    tp_mag[i] = scipy.stats.ttest_rel(PSD_mag_unf1.loc[:,i],PSD_mag_unf0.loc[:,i])
+signif_mag_unf = []
+for inter, results in tp_mag.items(): 
+    if (results[1]<.05):
+        signif_mag_unf.append(inter)
+PSD_final_mag_unf = PSD_mag_unf.loc[:,signif_mag_unf]
+PSD_final_mag_unf = PSD_final_mag_unf.astype(float)
+PSD_final_mag_unf['event_type'] = epoch_unfiltered['event_type']
+PSD_final_mag_unf['event_type']  = PSD_final_mag_unf['event_type'].astype(int)
 
 
 # In[41]:
@@ -853,10 +906,10 @@ train_logMag;
 train_diff_logmag;
 
 
-# In[89]:
+# In[ ]:
 
 
-##don't know why the fuck entries are type "object", need to convert if we use numpy operations to prevent error
+##don't know why entries are type "object", need to convert if we use numpy operations to prevent error
 PSD_final_train = PSD_final_train.astype(float) 
 PSD_final_train['event_type'] = PSD_final_train['event_type'].astype(int)
 
@@ -891,7 +944,7 @@ train_diff_logmag['event_type'] = train_diff_logmag['event_type'].astype(int)
 
 # ### SVM
 
-# In[107]:
+# In[129]:
 
 
 from sklearn.pipeline import Pipeline
@@ -923,7 +976,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 
 
-# In[571]:
+# In[130]:
 
 
 def SVM(dataset, iter):
@@ -964,6 +1017,42 @@ def SVM(dataset, iter):
         dict_of_vals = {'best_validation': validation_scores, 'best_params': params_best, 'tst_predictions': tst_predictions,  'y_true': y_true, 'acc_scores': acc_scores, 'precision_scores': precision_scores, 'recall_scores': recall_scores, 'f1_scores': f1_scores}
 
     return dict_of_vals
+
+
+# In[133]:
+
+
+svm_mag_unf = SVM(PSD_final_mag_unf, iter = -1)
+
+
+# In[137]:
+
+
+np.mean(svm_mag_unf.get('acc_scores'))
+
+
+# In[138]:
+
+
+knn_mag_unf = KNN(PSD_final_mag_unf)
+
+
+# In[139]:
+
+
+np.mean(knn_mag_unf.get('acc_scores'))
+
+
+# In[140]:
+
+
+DT_mag_unf = DT(PSD_final_mag_unf)
+
+
+# In[141]:
+
+
+np.mean(DT_mag_unf.get('acc_scores'))
 
 
 # In[572]:
@@ -1160,7 +1249,7 @@ np.mean(svm_mult_fil)
 
 # ## KNN
 
-# In[111]:
+# In[135]:
 
 
 def KNN(dataset):
@@ -1337,7 +1426,7 @@ np.mean(KNN_mult_WT.get('acc_scores'))
 
 # ## Decision Trees
 
-# In[118]:
+# In[136]:
 
 
 def DT(dataset): ##takes full train set
